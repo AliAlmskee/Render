@@ -29,7 +29,7 @@ class UserController extends Controller
 
     public function register(Request $request)
     {
-        return 1 ; 
+     
         try {
             $validatedData = $request->validate([
                 'name' => 'required|string',
@@ -57,7 +57,7 @@ class UserController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['error' => $e->errors()], 400);
         } catch (\Exception $e) {
-            return response()->json(['error' =>  $e], 500);
+            return response()->json(['error' =>  $e->errors()], 500);
         }
     }
     
