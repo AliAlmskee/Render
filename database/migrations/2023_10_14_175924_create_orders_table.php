@@ -22,8 +22,7 @@ class CreateOrdersTable extends Migration
             $table->unsignedInteger('estimated_price')->nullable();
             $table->boolean('is_hurry')->default(false);
             $table->string('status')->default('pending');
-            $table->enum('genders', ['Male', 'Female','both'])->nullable();
-
+            $table->string('genders');
             $table->timestamps();
         });
     }
