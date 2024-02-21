@@ -35,7 +35,7 @@ Route::middleware('guest:api')->group(function () {
 
 
 
-    Route::middleware('auth:sanctum')->group(function () {
+  
         Route::post('/logout', [UserController::class, 'logout']);
         Route::get('/id', [UserController::class, 'getid']);
 
@@ -51,7 +51,7 @@ Route::middleware('guest:api')->group(function () {
         Route::post('orders/gender', [OrderController::class, 'getOrdersBygender']);
         Route::get('/profile', [UserController::class, 'getprofile']);
         Route::post('/search', [OrderController::class, 'search']);
-    });
+  
 
 //dashboard
 Route::prefix('admin')->group(function () {
