@@ -39,7 +39,8 @@ class UserController extends Controller
                 'birth' => 'required|date',
                 'phone' => 'required|string',
             ]);
-    
+            
+            $validatedData['gender'] = "Male";
             $user = new User([
                 'name' => $validatedData['name'],
                 'email' => $validatedData['email'],
