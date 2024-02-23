@@ -35,17 +35,16 @@ class UserController extends Controller
                 'name' => 'required|string',
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|string|min:8',
-               // 'gender' => 'required|in:Male,Female',
+                'gender' => 'required|in:Male,Female',
                 'birth' => 'required|date',
                 'phone' => 'required|string',
             ]);
-            
-         //   $validatedData['gender'] = "Male";
+    
             $user = new User([
                 'name' => $validatedData['name'],
                 'email' => $validatedData['email'],
                 'password' => Hash::make($validatedData['password']),
-                //'gender' => $validatedData['gender'],
+                'gender' => $validatedData['gender'],
                 'birth' => $validatedData['birth'],
                 'phone' => $validatedData['phone'],
             ]);
