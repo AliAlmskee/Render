@@ -29,7 +29,7 @@ class UserController extends Controller
 
     public function register(Request $request)
     {
-     
+       
         try {
             $validatedData = $request->validate([
                 'name' => 'required|string',

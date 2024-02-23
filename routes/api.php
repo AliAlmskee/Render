@@ -6,7 +6,9 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerticesController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+
 
 
 
@@ -70,7 +72,13 @@ Route::prefix('admin')->group(function () {
 
 
 
-
+Route::get('migrate' , function(){
+    return Artisan::call('migrate:fresh');
+  });
+  
+  Route::get('seed' , function(){
+      return Artisan::call('db:seed');
+  });
 
 
 
