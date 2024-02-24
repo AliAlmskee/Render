@@ -9,7 +9,7 @@ class CreateEdgesTable extends Migration
     public function up()
     {
         Schema::create('edges', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id')->unsigned();
             $table->unsignedBigInteger('source_vertex_id');
             $table->unsignedBigInteger('target_vertex_id');
             $table->float('weight');
@@ -17,12 +17,12 @@ class CreateEdgesTable extends Migration
             $table->string('status');
             $table->float('time');
             $table->timestamps();
-
+    
             $table->foreign('source_vertex_id')
                 ->references('id')
                 ->on('vertices')
                 ->onDelete('cascade');
-
+    
             $table->foreign('target_vertex_id')
                 ->references('id')
                 ->on('vertices')

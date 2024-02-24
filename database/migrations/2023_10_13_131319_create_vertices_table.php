@@ -8,16 +8,16 @@ class CreateVerticesTable extends Migration
     public function up()
     {
         Schema::create('vertices', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id')->unsigned();
             $table->unsignedBigInteger('bus_line_id');
             $table->string('name');
-
-            $table->point('point');
+    
+          //  $table->point('point')->nullable();
             $table->boolean('is_busy')->default(false);
             $table->timestamp('busy_at')->nullable();
             $table->integer('feedback_count')->default(0);
-                    $table->timestamps();
-
+            $table->timestamps();
+    
             $table->foreign('bus_line_id')
                 ->references('id')
                 ->on('bus_lines')
