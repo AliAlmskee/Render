@@ -10,9 +10,9 @@ class CreateVerticesTable extends Migration
         Schema::create('vertices', function (Blueprint $table) {
             $table->bigIncrements('id')->unsigned();
             $table->unsignedBigInteger('bus_line_id');
-            $table->string('name');
-    
-          //  $table->point('point')->nullable();
+            $table->string('name');     
+            $table->decimal('latitude', 14, 12); 
+            $table->decimal('longitude', 14, 12); 
             $table->boolean('is_busy')->default(false);
             $table->timestamp('busy_at')->nullable();
             $table->integer('feedback_count')->default(0);

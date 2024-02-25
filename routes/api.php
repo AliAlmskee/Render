@@ -35,24 +35,24 @@ Route::middleware('guest:api')->group(function () {
     Route::post('/register', [UserController::class, 'register']);
     });
 
-
-
-  
+    
+    Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [UserController::class, 'logout']);
         Route::get('/id', [UserController::class, 'getid']);
-
+    
         Route::delete('/delete/order', [OrderController::class, 'destroy']);
         Route::resource('orders', OrderController::class);
         Route::post('/orders/join', [OrderController::class, 'joinOrder']);
         Route::post('/complete/order', [OrderController::class, 'completeOrder']);
         Route::post('/feedback', [VerticesController::class, 'feedback']);
-        Route::get('/history', [OrderController::class, 'gethistory'])->name('order.history');
+        Route::get('/history', [OrderController::class, 'gethistory']);
         Route::get('/pending/orders', [OrderController::class, 'getPendingOrders']);
         Route::post('/shortest-path', [EdgesController::class, 'findShortestPath']);
-        Route::post('/orders/destination', [OrderController::class, 'getOrdersBydestnaion']);
-        Route::post('orders/gender', [OrderController::class, 'getOrdersBygender']);
+        Route::get('/orders/destination', [OrderController::class, 'getOrdersBydestnaion']);
+        Route::get('orders/gender', [OrderController::class, 'getOrdersBygender']);
         Route::get('/profile', [UserController::class, 'getprofile']);
         Route::post('/search', [OrderController::class, 'search']);
+    });
   
 
 //dashboard
@@ -64,8 +64,6 @@ Route::prefix('admin')->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::delete('/busline', [BusLineController::class, 'destroy']);
     Route::resource('busline', BusLineController::class);
-
-
 
 });
 

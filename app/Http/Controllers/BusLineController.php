@@ -11,10 +11,11 @@ class BusLineController extends Controller
 {
 
     public function index()
-{
-    $busLines = BusLine::all();
-    return response()->json($busLines);
-}
+    {
+        $busLines = BusLine::all();
+        return response()->json($busLines);
+    }
+
 
 public function store(Request $request)
 {
@@ -23,7 +24,6 @@ public function store(Request $request)
         'price' => 'required',
         'city_name' => 'required',
         'bus_line' => 'required|array',
-
     ]);
 
     $busLine = new BusLine();
@@ -31,23 +31,25 @@ public function store(Request $request)
     $busLine->price = $busLineData['price'];
     $busLine->city_name = $busLineData['city_name'];
     $busLine->save();
+
     $verticesData = $busLineData['bus_line'];
     $previousVertex = null;
     $firstVertex = null;
 
     foreach ($verticesData as $vertexData) {
         $vertex = new Vertices();
-        $vertex->bus_line_id  = $busLine->id;
+        $vertex->bus_line_id = $busLine->id;
         $vertex->name = $vertexData['name'];
-        $vertex->point = new Point($vertexData['longitude'], $vertexData['latitude']);
+        $vertex->longitude = $vertexData['longitude'];
+        $vertex->latitude = $vertexData['latitude'];
         $vertex->save();
 
         if ($previousVertex) {
             $distance = $this->calculateDistance(
-                $previousVertex->point->getLat(),
-                $previousVertex->point->getLng(),
-                $vertex->point->getLat(),
-                $vertex->point->getLng()
+                $previousVertex->latitude,
+                $previousVertex->longitude,
+                $vertex->latitude,
+                $vertex->longitude
             );
 
             $edge = new Edges();
@@ -68,10 +70,10 @@ public function store(Request $request)
     // Add an edge between the final vertex and the first vertex
     if ($previousVertex && $firstVertex) {
         $distance = $this->calculateDistance(
-            $previousVertex->point->getLat(),
-            $previousVertex->point->getLng(),
-            $firstVertex->point->getLat(),
-            $firstVertex->point->getLng()
+            $previousVertex->latitude,
+            $previousVertex->longitude,
+            $firstVertex->latitude,
+            $firstVertex->longitude
         );
 
         $edge = new Edges();
@@ -83,7 +85,8 @@ public function store(Request $request)
         $edge->weight = $edge->time + $busLine->price / 1000;
         $edge->save();
     }
-    $busLines = Busline::all();
+
+    $busLines = BusLine::all();
     foreach ($busLines as $index => $busLineData) {
         if ($busLine->id != $index + 1 && $busLine->city_name === $busLineData->city_name) {
             $this->addShortestDistanceEdge($busLine->id, $index + 1);
@@ -92,7 +95,6 @@ public function store(Request $request)
 
     return response()->json($busLine, 201);
 }
-
 
 
 public function destroy(Request $request)
@@ -108,11 +110,9 @@ public function destroy(Request $request)
     }
 }
 
-
 function addShortestDistanceEdge($busLineId1, $busLineId2)
 {
     $vertices1 = Vertices::where('bus_line_id', $busLineId1)->get();
-
     $vertices2 = Vertices::where('bus_line_id', $busLineId2)->get();
 
     if ($vertices1->isEmpty() || $vertices2->isEmpty()) {
@@ -124,19 +124,20 @@ function addShortestDistanceEdge($busLineId1, $busLineId2)
         if ($vertices2->isEmpty()) {
             $busLineIds[] = $busLineId2;
         }
-        return response()->json(['message' => 'No vertices found for the given bus line IDs', 'busLineIds' => $busLineIds], 404);
+        return  response()->json(['message' => 'No vertices found for the given bus line IDs', 'busLineIds' => $busLineIds], 404);
     }
-    $busLine = Busline::where('id', $busLineId2)->first();
-        $shortestDistance = INF;
+
+    $busLine = BusLine::where('id', $busLineId2)->first();
+    $shortestDistance = INF;
     $shortestVertices = [];
 
     foreach ($vertices1 as $vertex1) {
         foreach ($vertices2 as $vertex2) {
             $distance = $this->calculateDistance(
-                $vertex1->point->getLat(),
-                $vertex1->point->getLng(),
-                $vertex2->point->getLat(),
-                $vertex2->point->getLng()
+                $vertex1->latitude,
+                $vertex1->longitude,
+                $vertex2->latitude,
+                $vertex2->longitude
             );
 
             if ($distance < $shortestDistance) {
@@ -146,25 +147,23 @@ function addShortestDistanceEdge($busLineId1, $busLineId2)
         }
     }
 
+    $edge = new Edges();
+    $edge->source_vertex_id = $shortestVertices[0]->id;
+    $edge->target_vertex_id = $shortestVertices[1]->id;
+    $edge->distance = $shortestDistance;
+    $edge->status = 'walking2';
+    $edge->time = $this->calculateWalkingTime($shortestDistance);
+    $edge->weight = $edge->time + $busLine->price / 500;
+    $edge->save();
 
-        $edge = new Edges();
-        $edge->source_vertex_id = $shortestVertices[0]->id;
-        $edge->target_vertex_id = $shortestVertices[1]->id;
-
-        $edge->distance = $shortestDistance ;
-        $edge->status = 'walking2';
-        $edge->time = $this->calculateWalkingTime($shortestDistance);
-        $edge->weight = $edge->time +  $busLine->price/500   ;
-        $edge->save();
-        $edge = new Edges();
-        $edge->source_vertex_id = $shortestVertices[1]->id;
-        $edge->target_vertex_id = $shortestVertices[0]->id;
-        $edge->distance = $shortestDistance;
-        $edge->status = 'walking2';
-        $edge->time = $this->calculateWalkingTime($shortestDistance);
-        $edge->weight =   $edge->time +   $busLine->price/500   ;
-          $edge->save();
-
+    $edge = new Edges();
+    $edge->source_vertex_id = $shortestVertices[1]->id;
+    $edge->target_vertex_id = $shortestVertices[0]->id;
+    $edge->distance = $shortestDistance;
+    $edge->status = 'walking2';
+    $edge->time = $this->calculateWalkingTime($shortestDistance);
+    $edge->weight = $edge->time + $busLine->price / 500;
+    $edge->save();
 }
 
 function calculateWalkingTime($distance)

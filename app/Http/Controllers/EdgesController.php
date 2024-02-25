@@ -34,10 +34,12 @@ class EdgesController extends Controller
         $target_vertex = Vertices::find($target_vertex_id);
 
         $distance = $this->calculateDistance(
-            $source_vertex->point->getLat(),
-            $source_vertex->point->getLng(),
-            $target_vertex->point->getLat(),
-            $target_vertex->point->getLng()
+            $source_vertex->latitude,
+            $source_vertex->longitude,
+            $target_vertex->latitude,
+            $target_vertex->longitude
+
+
         );
 
         $status = $data['status'];
@@ -73,12 +75,13 @@ class EdgesController extends Controller
 
 public function findShortestPath(Request $request)
 {
-    $sourceName = $request->input('source_name');
-    $targetName = $request->input('target_name');
+    $source_id = $request->input('source_id');
+    $target_id = $request->input('target_id');
 
-    $sourceVertex = Vertices::where('name', $sourceName)->first();
-    $targetVertex = Vertices::where('name', $targetName)->first();
-
+    $sourceVertex = Vertices::find($source_id);
+    $targetVertex =Vertices::find($target_id);
+    
+   
         if (!$sourceVertex || !$targetVertex) {
             return response()->json(['message' => 'One or both vertices not found'], 404);
         }
@@ -97,13 +100,13 @@ public function findShortestPath(Request $request)
 
         $allVertices = Vertices::all();
         $newEdgesIds = [];
-
+      
         foreach ($allVertices as $vertex) {
             $distance = $this->calculateDistance(
-                $vertex->point->getLat(),
-                $vertex->point->getLng(),
-                $targetVertex->point->getLat(),
-                $targetVertex->point->getLng()
+                $vertex->latitude,
+                $vertex->pointlongitude,
+                $targetVertex->latitude,
+                $targetVertex->longitude
             );
             if ($distance != 0) {
                 $edge = new Edges();
@@ -134,6 +137,7 @@ public function findShortestPath(Request $request)
        }
        $newPath[] = end($path);
        $path = $newPath;
+
         return response()->json($path);
 
 
@@ -141,56 +145,58 @@ public function findShortestPath(Request $request)
 
 
     //   idea
-    $instructions = [];
-$currentBusLine = null;
-$previousLastVertex = null;
+//     $instructions = [];
+// $currentBusLine = null;
+// $previousLastVertex = null;
 
-$firstVertex = Vertices::where('id', $path[0])->first();
-$lastVertex = Vertices::where('id', end($path))->first();
+// $firstVertex = Vertices::where('id', $path[0])->first();
+// $lastVertex = Vertices::where('id', end($path))->first();
 
-if ($firstVertex->name === $lastVertex->name) {
-    return ' alrady there ';
+// if ($firstVertex->name === $lastVertex->name) {
+//     return ' alrady there ';
+// }
+
+// foreach ($path as $index => $vertexId) {
+//     $vertex = Vertices::where('id', $vertexId)->first();
+//     $busLine = BusLine::where('id', $vertex->bus_line_id)->first();
+
+//     if ($currentBusLine === null) {
+//         // First vertex
+//         $currentBusLine = $busLine;
+//         $startVertex = $vertex->name;
+//     } elseif ($busLine->id !== $currentBusLine->id) {
+//         // Switching buses
+//         $endVertex = $path[$index - 1];
+//         $endVertexName = Vertices::where('id', $endVertex)->value('name');
+
+//         if ($previousLastVertex !== null && $previousLastVertex !== $startVertex) {
+//             $instructions[] = "Walk from {$previousLastVertex} until you reach {$startVertex}.";
+//         }
+//         if ($endVertexName !== $startVertex) {
+//         $instructions[] = "Ride {$currentBusLine->name} from {$startVertex} until you reach {$endVertexName}.";
+//         }
+//         if ($endVertexName !== $vertex->name) {
+//             $instructions[] = "Walk from {$endVertexName} until you reach {$vertex->name}.";
+//         }
+
+//         $previousLastVertex = $vertex->name;
+//         $currentBusLine = $busLine;
+//         $startVertex = $vertex->name;
+//    
+//  }
+// }
+
+// $endVertex = end($path);
+// $endVertexName = Vertices::where('id', $endVertex)->value('name');
+
+// if ($endVertexName !== $startVertex) {
+//     $instructions[] = "Ride {$currentBusLine->name} from {$startVertex} until you reach {$endVertexName}.";
+// }
+
+// $instructionString = implode(' then ', $instructions);
+
+// return $instructionString; 
 }
-
-foreach ($path as $index => $vertexId) {
-    $vertex = Vertices::where('id', $vertexId)->first();
-    $busLine = BusLine::where('id', $vertex->bus_line_id)->first();
-
-    if ($currentBusLine === null) {
-        // First vertex
-        $currentBusLine = $busLine;
-        $startVertex = $vertex->name;
-    } elseif ($busLine->id !== $currentBusLine->id) {
-        // Switching buses
-        $endVertex = $path[$index - 1];
-        $endVertexName = Vertices::where('id', $endVertex)->value('name');
-
-        if ($previousLastVertex !== null && $previousLastVertex !== $startVertex) {
-            $instructions[] = "Walk from {$previousLastVertex} until you reach {$startVertex}.";
-        }
-        if ($endVertexName !== $startVertex) {
-        $instructions[] = "Ride {$currentBusLine->name} from {$startVertex} until you reach {$endVertexName}.";
-        }
-        if ($endVertexName !== $vertex->name) {
-            $instructions[] = "Walk from {$endVertexName} until you reach {$vertex->name}.";
-        }
-
-        $previousLastVertex = $vertex->name;
-        $currentBusLine = $busLine;
-        $startVertex = $vertex->name;
-    }
-}
-
-$endVertex = end($path);
-$endVertexName = Vertices::where('id', $endVertex)->value('name');
-
-if ($endVertexName !== $startVertex) {
-    $instructions[] = "Ride {$currentBusLine->name} from {$startVertex} until you reach {$endVertexName}.";
-}
-
-$instructionString = implode(' then ', $instructions);
-
-return $instructionString; }
 
 
 

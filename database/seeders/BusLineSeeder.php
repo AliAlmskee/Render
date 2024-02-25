@@ -14,13 +14,25 @@ class BusLineSeeder extends Seeder
 {
     public function run()
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-
+        DB::statement('ALTER TABLE vertices DISABLE TRIGGER ALL;');
         DB::table('vertices')->truncate();
+        DB::statement('ALTER TABLE vertices ENABLE TRIGGER ALL;');
+        
+        DB::statement('ALTER TABLE bus_lines DISABLE TRIGGER ALL;');
         DB::table('bus_lines')->truncate();
+        DB::statement('ALTER TABLE bus_lines ENABLE TRIGGER ALL;');
+        
+        DB::statement('ALTER TABLE edges DISABLE TRIGGER ALL;');
         DB::table('edges')->truncate();
+        DB::statement('ALTER TABLE edges ENABLE TRIGGER ALL;');
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        DB::statement('ALTER TABLE users DISABLE TRIGGER ALL;');
+        DB::table('users')->truncate();
+        DB::statement('ALTER TABLE users ENABLE TRIGGER ALL;');
+
+        DB::statement('ALTER TABLE orders DISABLE TRIGGER ALL;');
+        DB::table('orders')->truncate();
+        DB::statement('ALTER TABLE orders ENABLE TRIGGER ALL;');
 
         $busLines = [
             [
@@ -40,7 +52,7 @@ class BusLineSeeder extends Seeder
                 'price' => 1000,
                 'city_name' => CityName::DAMASCUS,
                 'bus_line' => [
-                    ['name' => '2جسر الرئيس', 'latitude' => 33.5134817483409, 'longitude' => 36.28937938739717],
+                    ['name' => 'جسر الرئيس', 'latitude' => 33.5134817483409, 'longitude' => 36.28937938739717],
                     ['name' => 'شارع الثورة ', 'latitude' => 33.5144800352018, 'longitude' => 36.299780195605756],
                     ['name' => 'اول شارع بغداد ', 'latitude' => 33.51982886868554, 'longitude' => 36.300745219501906],
                 ],
@@ -72,48 +84,47 @@ class BusLineSeeder extends Seeder
             $busLine->price = $busLineData['price'];
             $busLine->city_name = $busLineData['city_name'];
             $busLine->save();
-
+        
             $verticesData = $busLineData['bus_line'];
             $previousVertex = null;
-
+        
             foreach ($verticesData as $vertexData) {
                 $vertex = new Vertices();
                 $vertex->bus_line_id = $busLine->id;
-                $vertex->point = new Point($vertexData['longitude'], $vertexData['latitude']);
+                $vertex->latitude = $vertexData['latitude'];
+                $vertex->longitude = $vertexData['longitude'];
                 $vertex->name = $vertexData['name'];
-
+        
                 $vertex->save();
-
+        
                 if ($previousVertex) {
                     $distance = $this->calculateDistance(
-                        $previousVertex->point->getLat(),
-                        $previousVertex->point->getLng(),
-                        $vertex->point->getLat(),
-                        $vertex->point->getLng()
+                        $previousVertex->latitude,
+                        $previousVertex->longitude,
+                        $vertex->latitude,
+                        $vertex->longitude
                     );
-
+        
                     $edge = new Edges();
                     $edge->source_vertex_id = $previousVertex->id;
                     $edge->target_vertex_id = $vertex->id;
-
+        
                     $edge->distance = $distance;
                     $edge->status = 'bus';
                     $edge->time = $this->calculateEstimatedTime($distance);
-                    $edge->weight = $distance +   $edge->time;
+                    $edge->weight = $distance + $edge->time;
                     $edge->save();
                 }
-
+        
                 $previousVertex = $vertex;
             }
-
-
         }
+        
         foreach ($busLines as $index => $busLineData) {
             for ($index2 = $index + 1; $index2 < count($busLines); $index2++) {
                 $this->addShortestDistanceEdge($index + 1, $index2 + 1);
             }
         }
-
     }
 
 
@@ -130,10 +141,10 @@ class BusLineSeeder extends Seeder
         foreach ($vertices1 as $vertex1) {
             foreach ($vertices2 as $vertex2) {
                 $distance = $this->calculateDistance(
-                    $vertex1->point->getLat(),
-                    $vertex1->point->getLng(),
-                    $vertex2->point->getLat(),
-                    $vertex2->point->getLng()
+                    $vertex1->latitude,
+                    $vertex1->longitude,
+                    $vertex2->latitude,
+                    $vertex2->longitude
                 );
 
                 if ($distance < $shortestDistance) {

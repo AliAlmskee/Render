@@ -8,12 +8,13 @@ use Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 
 class Vertices extends Model
 {
-    use HasFactory, SpatialTrait;
+    use HasFactory;
 
-    protected $fillable = ['bus_line_id','name' ,  'point', 'is_busy'];
-
+    protected $fillable = ['bus_line_id', 'name', 'latitude', 'longitude', 'is_busy'];
+    
     protected $spatialFields = [
-        'point',
+        'latitude',
+        'longitude',
     ];
 
     public function busLine()

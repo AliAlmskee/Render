@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use Dotenv\Exception\ValidationException;
+use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,7 +37,6 @@ class OrderController extends Controller
                 'is_hurry' => 'boolean',
                 'genders' => 'in:Male,Female,both'
             ]);
-
             $validatedData['user_ids'] = [Auth::id()];
 
             $order = new Order;
@@ -74,18 +74,18 @@ class OrderController extends Controller
 
 
                $userId = Auth::id();
-            // $userId = 2;
+        
 
              $userIds = json_decode($order->user_ids, true);
 
              if (is_array($userIds) && in_array($userId, $userIds)) {
-                 return response()->json("You are already in this order", 400);
+                 return response()->json(["massage"=>"You are already in this order"], 400);
              }
             if($order->status ==="Completed")
             {                return response()->json("The order is alrady completed ", 400);
         }
             if ($order->current_passenger_count + $numOfPeople > 4) {
-                return response()->json("There is no room for {$numOfPeople} more people.", 400);
+                return response()->json(["massage"=>"There is no room for {$numOfPeople} more people."], 400);
             }
 
 
@@ -102,7 +102,7 @@ class OrderController extends Controller
                 $order->status = "Completed";
             $order->save();
             // order a car api
-            return response()->json("There is a car on its way ");
+            return response()->json(["massage"=>"There is a car on its way "]);
 
 
             }
@@ -121,7 +121,6 @@ class OrderController extends Controller
         $order = Order::findOrFail($orderId);
         if(!$order->is_hurry)
         {
-
             return response()->json("the order tybe is not hurry") ;
         }
         $userIds = json_decode($order->user_ids, true);
@@ -132,11 +131,12 @@ class OrderController extends Controller
 
             // order a car api
 
-            return response()->json("There is a car on its way");
+            return response()->json([
+                "massage" =>"There is a car on its way"
+            ]);
         } else {
             return response()->json([
-                'user_ids' => $userIds,
-                'auth_id' => Auth::id()
+                "massage" => "you are not the creater of the order" 
             ]);
         }
     }
@@ -163,102 +163,102 @@ class OrderController extends Controller
 
 
 
-    public function gethistory()
-{
-    $id = Auth::id();
-    $orders = Order::whereJsonContains('user_ids', $id)
-    ->where('status', 'Completed')
-    ->get();
-    return $orders;
-}
+        public function gethistory()
+    {
+        $id = Auth::id();
+        $orders = Order::whereJsonContains('user_ids', $id)
+        ->where('status', 'Completed')
+        ->get();
+        return $orders;
+    }
 
 
-public function getPendingOrders()
-{
-    $orders = Order::where('status', 'pending')->get();
+    public function getPendingOrders()
+    {
+        $orders = Order::where('status', 'pending')->get();
 
-    return $orders;
-}
+        return $orders;
+    }
 
-public function getOrdersBydestnaion(Request $request)
-{
+    public function getOrdersBydestnaion(Request $request)
+    {
 
 
-    try {
+        try {
+            $validatedData = $request->validate([
+                'id' => 'required|integer',
+            ]);
+
+            $id = $validatedData['id'];
+            $orders = Order::where('status', 'pending')->where('destination_vertices_id', $id)->get();
+
+            return response()->json($orders, 200);
+        } catch (ValidationException $e) {
+            return response()->json(['error' => $e->errors()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Failed to retrieve orders.'], 500);
+        }
+    }
+
+    public function getOrdersBygender(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'gender' => 'required|in:Male,Female,both',
+            ]);
+
+            $gender = $validatedData['gender'];
+            $orders = Order::where('status', 'pending')->where('genders', $gender)->get();
+
+            return response()->json($orders, 200);
+        } catch (ValidationException $e) {
+            return response()->json(['error' => $e->errors()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Failed to retrieve orders.'], 500);
+        }
+    }
+
+
+    public function search(Request $request)
+    {
         $validatedData = $request->validate([
-            'id' => 'required|integer',
+            'name' => 'required'
         ]);
 
-        $id = $validatedData['id'];
-        $orders = Order::where('status', 'pending')->where('destination_vertices_id', $id)->get();
+        $subname = $validatedData['name'];
+        if (empty($subname)) {
+            return response()->json([]);
+        }
+        $vertices = Vertices::all();
 
-        return response()->json($orders, 200);
-    } catch (ValidationException $e) {
-        return response()->json(['error' => $e->errors()], 400);
-    } catch (Exception $e) {
-        return response()->json(['error' => 'Failed to retrieve orders.'], 500);
-    }
-}
+        foreach ($vertices as $vertex) {
+            $name = $vertex->name;
+            $relevanceScore = $this->calculateRelevanceScore($subname, $name);
+            $vertex->relevanceScore = $relevanceScore;
+        }
 
-public function getOrdersBygender(Request $request)
-{
-    try {
-        $validatedData = $request->validate([
-            'gender' => 'required|in:Male,Female,both',
-        ]);
+        $filteredVertices = $vertices->filter(function ($vertex) {
+            return $vertex->relevanceScore >= 90;
+        });
 
-        $gender = $validatedData['gender'];
-        $orders = Order::where('status', 'pending')->where('genders', $gender)->get();
+        $sortedVertices = $filteredVertices->sortByDesc('relevanceScore');
 
-        return response()->json($orders, 200);
-    } catch (ValidationException $e) {
-        return response()->json(['error' => $e->errors()], 400);
-    } catch (Exception $e) {
-        return response()->json(['error' => 'Failed to retrieve orders.'], 500);
-    }
-}
+        $mostRelevantVertices = $sortedVertices->take(2)->pluck('name');
 
-
-public function search(Request $request)
-{
-    $validatedData = $request->validate([
-        'name' => 'required'
-    ]);
-
-    $subname = $validatedData['name'];
-    if (empty($subname)) {
-        return response()->json([]);
-    }
-    $vertices = Vertices::all();
-
-    foreach ($vertices as $vertex) {
-        $name = $vertex->name;
-        $relevanceScore = $this->calculateRelevanceScore($subname, $name);
-        $vertex->relevanceScore = $relevanceScore;
+        return response()->json($mostRelevantVertices);
     }
 
-    $filteredVertices = $vertices->filter(function ($vertex) {
-        return $vertex->relevanceScore >= 99;
-    });
+    function calculateRelevanceScore($name, $subname)
+    {
+        $nameLength = mb_strlen($name);
+        $subnameLength = mb_strlen($subname);
 
-    $sortedVertices = $filteredVertices->sortByDesc('relevanceScore');
+        $matchedCharacters = similar_text($name, $subname);
 
-    $mostRelevantVertices = $sortedVertices->take(2)->pluck('name');
+        $relevanceScore = ($matchedCharacters / $nameLength) * 100;
 
-    return response()->json($mostRelevantVertices);
-}
-
-function calculateRelevanceScore($name, $subname)
-{
-    $nameLength = mb_strlen($name);
-    $subnameLength = mb_strlen($subname);
-
-    $matchedCharacters = similar_text($name, $subname);
-
-    $relevanceScore = ($matchedCharacters / $nameLength) * 100;
-
-    return $relevanceScore;
-}
+        return $relevanceScore;
+    }
 
 
 }
