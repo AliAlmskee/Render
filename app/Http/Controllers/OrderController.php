@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\User;
 use Dotenv\Exception\ValidationException;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -33,7 +34,8 @@ class OrderController extends Controller
             $validatedData = $request->validate([
                 'top_passenger_count' => 'integer',
                 'current_passenger_count' => 'integer',
-                'destination_vertices_id' => 'required|integer',
+                'destination_vertices_id' => 'required|integer',               
+                'source_vertices_id' => 'required|integer',
                 'is_hurry' => 'boolean',
                 'genders' => 'in:Male,Female,both'
             ]);
@@ -43,6 +45,8 @@ class OrderController extends Controller
             $order->top_passenger_count = $validatedData['top_passenger_count'];
             $order->current_passenger_count = $validatedData['current_passenger_count'];
             $order->destination_vertices_id = $validatedData['destination_vertices_id'];
+            $order->source_vertices_id = $validatedData['source_vertices_id'];
+
             $order->is_hurry = $validatedData['is_hurry'];
             $order->genders = $validatedData['genders'];
 
@@ -172,11 +176,25 @@ class OrderController extends Controller
         return $orders;
     }
 
-
-    public function getPendingOrders()
+        public function getOrdersUsers(Request $request)
     {
-        $orders = Order::where('status', 'pending')->get();
+        $order_id = $request->input('order_id');
+        $order = Order::find($order_id);
 
+        $userIds = json_decode($order->user_ids, true);
+        $users = User::whereIn('id', $userIds)->get();
+    
+        return $users;
+    }
+
+
+    public function getPendingOrders(Request $request)
+    {
+        $source_vertices_id = $request->input('source_vertices_id');
+        $orders = Order::where('source_vertices_id', $source_vertices_id)
+                       ->where('status', 'pending')
+                       ->get();
+    
         return $orders;
     }
 

@@ -30,7 +30,7 @@ public function store(Request $request)
     $busLine->name = $busLineData['name'];
     $busLine->price = $busLineData['price'];
     $busLine->city_name = $busLineData['city_name'];
-    $busLine->bus_line = $busLineData['bus_line'];
+    $busLine->bus_line = json_encode($busLineData['bus_line'], JSON_UNESCAPED_UNICODE);
     $busLine->save();
 
     $verticesData = $busLineData['bus_line'];

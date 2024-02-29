@@ -13,6 +13,7 @@ class Order extends Model
         'top_passenger_count',
         'current_passenger_count',
         'destination_vertices_id',
+        'source_vertices_id',
         'estimated_price',
         'is_hurry',
         'status',

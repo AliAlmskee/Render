@@ -50,10 +50,11 @@ Route::middleware('guest:api')->group(function () {
         Route::post('/shortest-path', [EdgesController::class, 'findShortestPath']);
         Route::get('/orders/destination', [OrderController::class, 'getOrdersBydestnaion']);
         Route::get('orders/gender', [OrderController::class, 'getOrdersBygender']);
+        Route::get('getOrdersUsers', [OrderController::class, 'getOrdersUsers']);
         Route::get('/profile', [UserController::class, 'getprofile']);
         Route::post('/search', [OrderController::class, 'search']);
     });
-  
+    
 
 //dashboard
 Route::prefix('admin')->group(function () {

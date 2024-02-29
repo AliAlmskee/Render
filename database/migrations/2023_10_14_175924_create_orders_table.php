@@ -14,6 +14,7 @@ class CreateOrdersTable extends Migration
             $table->unsignedInteger('top_passenger_count')->default(1);
             $table->unsignedInteger('current_passenger_count')->default(1);
             $table->unsignedBigInteger('destination_vertices_id');
+            $table->unsignedBigInteger('source_vertices_id');
             $table->unsignedInteger('estimated_price')->nullable();
             $table->boolean('is_hurry')->default(false);
             $table->string('status')->default('pending');
